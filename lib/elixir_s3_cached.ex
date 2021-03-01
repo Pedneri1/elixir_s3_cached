@@ -2,7 +2,8 @@ defmodule ElixirS3Cached do
   @moduledoc """
   Uses S3 as a key/value cache with support to expiration
   """
-  alias S3Bridge
+  alias Elixir_S3_Cached.S3Bridge
+  alias Elixir_S3_Cached.Bucket
 
   use GenServer
 

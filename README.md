@@ -38,3 +38,11 @@ or `set/3`
 ```elixir
 ElixirS3Cached.set(cache, "key", "value")
 ```
+
+## Benchmarks
+
+There are some benchmarkes available made with [Benchee](https://github.com/bencheeorg/benchee). You can find the script file under the `benchmarks/` directory. To run the benchmarks use the following command:
+
+```
+$ mix bench
+```

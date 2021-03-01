@@ -1,9 +1,10 @@
-defmodule S3Bridge do
+defmodule Elixir_S3_Cached.S3Bridge do
   @moduledoc """
   Interface between S3 and the ElixirS3Cached Module.
   """
 
   alias ExAws.S3
+  alias Elixir_S3_Cached.Bucket
 
   @doc """
   Sets a `key` in to S3 to `value` that will expire in `ttl` seconds from now
@@ -37,9 +38,9 @@ defmodule S3Bridge do
   def get(%Bucket{name: bucket_name} = bucket, key) do
     case S3.get_object(bucket_name, get_key(bucket, key))
          |> ExAws.request() do
-      {:error, response} ->
+      {:error, {_error, code, _data}} ->
         cond do
-          response[:http_error] == 404 ->
+          code == 404 ->
             {:error, :key_not_found}
 
           true ->
