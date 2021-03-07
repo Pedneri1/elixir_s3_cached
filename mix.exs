@@ -9,7 +9,7 @@ defmodule ElixirS3Cached.MixProject do
       version: @version,
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      description: "AWS S3 based caching for Elixir",
+      description: "Key/value access to AWS S3 with in-memory cache",
       deps: deps(),
       package: [
         licenses: ["MIT"],
