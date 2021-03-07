@@ -1,9 +1,11 @@
 # Changelog
 
-## v0.0.2
+## v0.1.1
 
-- add benchmark
+- refactor s3 bridge
+- added in-memmory cache using ETS
 
-## v0.0.1
+## v0.1.0
 
 - basic functionality
+- add benchmark
