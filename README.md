@@ -24,7 +24,7 @@ be found at [https://hexdocs.pm/elixir_s3_cached](https://hexdocs.pm/elixir_s3_c
 If you want to start the cache manually, you can call `ElixirS3Cached.start_link/3`
 
 ```elixir
-{:ok, cache} = ElixirS3Cached.start_link("cache_name", "bucket_name", %{})
+{:ok, cache} = ElixirS3Cached.start_link("elixir-s3-cache", %{})
 ```
 
 and then, call the function `get/2`
@@ -37,6 +37,20 @@ or `set/3`
 
 ```elixir
 ElixirS3Cached.set(cache, "key", "value")
+```
+
+### There is an optional parameter if you want to use a prefix.
+
+```elixir
+{:ok, cache} = ElixirS3Cached.start_link("elixir-s3-cache", %{}, "prefix")
+```
+
+Under the hood the lib will prepend the given prefix to every key. So if you call the `get/2` function with a "my-file.json" key it will look for "prefix/my-file.json" inside S3.
+
+If you want to invalidate the entire cache you can use the `clear/1` function:
+
+```elixir
+ElixirS3Cached.clear(cache)
 ```
 
 ## Benchmarks

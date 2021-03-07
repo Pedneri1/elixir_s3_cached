@@ -4,6 +4,7 @@ defmodule ElixirS3Cached do
   """
   alias Elixir_S3_Cached.S3Bridge
   alias Elixir_S3_Cached.Bucket
+  alias Elixir_S3_Cached.ETSBridge
 
   use GenServer
 
@@ -15,10 +16,9 @@ defmodule ElixirS3Cached do
   @type bucket_name :: binary | atom
 
   @typedoc """
-  The name of the cache. Will be used for namespacing the caches inside the bucket. Accepts atom or binary
-  but it's always converted to binary
+  The S3 Prefix of the object. Accepts atom or binary but it's always converted to binary
   """
-  @type cache_name :: binary | atom
+  @type prefix :: binary | atom
 
   @typedoc """
   The key which the value will be set under. Accepts atom or binary but will always be converted to binary.
@@ -36,10 +36,13 @@ defmodule ElixirS3Cached do
   """
   @type options :: [timeout: integer]
 
-  def start_link(cache_name, bucket_name, %{} = config, opts \\ []) do
+  def start_link(bucket_name, %{} = config, prefix \\ "", opts \\ []) do
     config =
       config
-      |> Map.put_new(:bucket, %Bucket{name: bucket_name, cache: cache_name})
+      |> Map.put_new(:bucket, %Bucket{
+        name: bucket_name,
+        prefix: prefix
+      })
 
     GenServer.start_link(__MODULE__, config, opts)
   end
@@ -49,20 +52,46 @@ defmodule ElixirS3Cached do
 
   def set(pid, key, value, ttl \\ 3600), do: GenServer.call(pid, {:set, key, value, ttl})
 
+  def clear(pid), do: GenServer.call(pid, :clear)
+
   # Server(callbacks)
   @impl true
   def init(init_args) do
+    generate_table()
     {:ok, init_args}
   end
 
   @impl true
-  def handle_call({:get, key}, _from, config) do
-    {:reply, S3Bridge.get(config[:bucket], key), config}
+  def handle_call({:get, key}, _from, %{bucket: bucket} = config) do
+    case ETSBridge.get(bucket, key) do
+      {:error, :key_not_found} ->
+        {:reply, S3Bridge.get(bucket, key), config}
+
+      response ->
+        {:reply, response, config}
+    end
   end
 
   @impl true
-  def handle_call({:set, key, value, ttl}, _from, config) do
-    IO.inspect(config)
-    {:reply, S3Bridge.set(config[:bucket], key, value, ttl), config}
+  def handle_call({:set, key, value, ttl}, _from, %{bucket: bucket} = config) do
+    case S3Bridge.set(bucket, key, value, ttl) do
+      {:ok, _} = response ->
+        ETSBridge.set(bucket, key, value, ttl)
+        {:reply, response, config}
+
+      {:error, _} = response ->
+        {:reply, response, config}
+    end
+  end
+
+  @impl true
+  def handle_call(:clear, _from, %{bucket: _bucket} = config) do
+    :ets.delete(ElixirS3Cached)
+    generate_table()
+    {:reply, :ok, config}
+  end
+
+  defp generate_table do
+    :ets.new(ElixirS3Cached, [:set, :protected, :named_table])
   end
 end
